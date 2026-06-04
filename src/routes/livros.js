@@ -141,6 +141,7 @@ router.post("/", (req, res) => {
         autor,
         genero,
         disponivel: true,
+        excluido: false
     }
 
     livros.push(novoLivro)
@@ -234,13 +235,13 @@ router.put("/:id", (req, res) => {
 router.delete("/:id", (req, res) => {
     const { id } = req.params
 
-    const livroIndex = livros.findIndex((livro) => livro.id === Number(id))
+    const livro = livros.find((l) => l.id === Number(id))
 
-    if (livroIndex === -1) {
-        return res.status(404).send("Livro com esse id não foi encontrado")
+    if (!livro) {
+        return res.status(404).send("Livro não encontrado")
     }
 
-    livros.splice(livroIndex, 1)
+    livro.excluido = true
 
     res.status(200).send("Livro deletado")
 })
