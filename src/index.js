@@ -1,5 +1,5 @@
 const express = require("express")
-
+const cors = require('cors')
 const app = express()
 
 const port = process.env.PORT || 3000
@@ -11,10 +11,10 @@ const emprestimosRouter = require("./routes/emprestimos.js");
 
 app.use(express.json())
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(cors())
 
 app.use("/livros", livroRouter)
 app.use("/emprestimos", emprestimosRouter)
-
 
 app.get("/", (req, res) => {
     res.send({
