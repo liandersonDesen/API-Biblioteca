@@ -3,6 +3,7 @@ const router = express.Router()
 
 const { livros } = require("../data/db.js")
 
+const { GENEROS_PADRAO } = require("../utils/constantes.js")
 
 /**
  * @swagger
@@ -43,6 +44,23 @@ const { livros } = require("../data/db.js")
  *  get:
  *      summary: Lista todos os livros
  *      tags: [Livros]
+ *      parameters:
+ *        - in: query
+ *          name: genero
+ *          required: false
+ *          schema:
+ *              type: string
+ *              enum: [
+ *                  "Ficção Científica",
+ *                  "Fantasia",
+ *                  "Mistério / Suspense",
+ *                  "Romance",
+ *                  "Biografia",
+ *                  "História",
+ *                  "Autoajuda",
+ *                  "Infanto-Juvenil"
+ *               ]
+ *          description: Filtrar os livros por um gênero específico
  *      responses:
  *          200:
  *              description: Lista de livros retornada com sucesso
@@ -52,9 +70,25 @@ const { livros } = require("../data/db.js")
  *                          type: array
  *                          items:
  *                              $ref: '#/components/schemas/Livro'
+ *          400:
+ *              description: Gênero de busca inválido
  */
 router.get("/", (req, res) => {
-    res.status(200).json(livros)
+    const { genero } = req.query
+
+    let livrosValidos = livros.filter(livro => !livro.excluido)
+
+    if (genero) {
+        const generoValido = GENEROS_PADRAO.find(g => g.toLowerCase() === genero.trim().toLowerCase())
+
+        if (!generoValido) {
+            return res.status(400).send(`Gênero de busca inválido! Escolha um dos seguintes: ${GENEROS_PADRAO.join(", ")}`)
+        }
+
+        livrosValidos = livrosValidos.filter(livro => livro.genero === generoValido)
+    }
+
+    res.status(200).json(livrosValidos)
 })
 
 /**
@@ -117,6 +151,16 @@ router.get("/:id", (req, res) => {
  *                              example: "Machado de Assis"
  *                          genero:
  *                              type: string
+ *                              enum: [
+ *                                  "Ficção Científica",
+ *                                  "Fantasia",
+ *                                  "Mistério / Suspense",
+ *                                  "Romance",
+ *                                  "Biografia",
+ *                                  "História",
+ *                                  "Autoajuda",
+ *                                  "Infanto-Juvenil"
+ *                              ]
  *                              example: "Romance"
  *      responses:
  *         201:
@@ -126,7 +170,8 @@ router.get("/:id", (req, res) => {
  *                  schema:
  *                      $ref: '#/components/schemas/Livro'
  *         400:
- *             description: Campos obrigatórios ausentes
+ *             description: Campos obrigatórios ausentes ou gênero inválido
+ * 
  */
 router.post("/", (req, res) => {
     const { titulo, autor, genero } = req.body
@@ -134,12 +179,17 @@ router.post("/", (req, res) => {
     if (!titulo || !autor || !genero) {
         return res.status(400).send("os campos titulo, autor e generos são obrigatorios ")
     }
+    const generoValido = GENEROS_PADRAO.find(g => g.toLowerCase() === genero.trim().toLowerCase())
 
+    if (!generoValido) {
+        return res.status(400).send(`Gênero inválido! Escolha um dos seguintes: ${GENEROS_PADRAO.join(", ")}`)
+    }
+    
     const novoLivro = {
         id: Date.now(),
         titulo,
         autor,
-        genero,
+        genero:generoValido,
         disponivel: true,
         excluido: false
     }
